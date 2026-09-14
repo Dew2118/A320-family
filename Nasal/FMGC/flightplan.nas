@@ -1034,7 +1034,7 @@ var flightPlanController = {
 		for (var i = me.currentToWptIndex.getValue(); i < me.flightplans[2].getPlanSize(); i += 1) {
 			var spdCstr = me.flightplans[2].getWP(i).speed_cstr;
 			var wp_role = me.flightplans[2].getWP(i).wp_role;
-			if (wp_role == "star" or me.flightplans[2].getWP(i).wp_role == "approach") {
+			if (wp_role == "star" or me.flightplans[2].getWP(i).wp_role == "approach" or me.flightplans[2].getWP(i).wp_type == "runway") {
 				return [1000000000000000000,0];
 			} if (spdCstr != 0 and spdCstr != nil and (wp_role == "sid" or wp_role == "missed") and wp_type) {
 				return [spdCstr,i];
