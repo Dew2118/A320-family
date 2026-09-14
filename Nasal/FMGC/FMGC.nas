@@ -984,28 +984,26 @@ var ManagedSPD = maketimer(0.25, func {
 			var constraintSpeed = nil;
 			var distanceToWpt = fmgc.flightPlanController.distToWpt.getValue();
 			var currentSpeed = fmgc.Velocities.indicatedAirspeedKt.getValue();
-			var nextApproachSpdConst = fmgc.flightPlanController.getNextSpdConst(0)[0];
+			var nextApproachSpdConst = fmgc.flightPlanController.getNextDecelSpdConst(0)[0];
 			var minSpeed = FMGCInternal.minspeed;
 			if (nextApproachSpdConst > minSpeed and nextApproachSpdConst <= 346) {
 				minSpeed = nextApproachSpdConst;
 			}
 			Input.minSpeed.setValue(minSpeed);
-			var addition = fmgc.flightPlanController.getTurnDistAddition();
 			if (waypoint != nil) {
 				constraintSpeed = flightPlanController.flightplans[2].getWP(FPLN.currentWP.getValue()).speed_cstr;
 			}
-			
 			if ((Modes.PFD.FMA.pitchMode == " " or Modes.PFD.FMA.pitchMode == "SRS") and (FMGCInternal.phase == 0 or FMGCInternal.phase == 1)) {
 				FMGCInternal.mngKtsMach = 0;
 				FMGCInternal.mngSpdCmd = FMGCInternal.v2;
 			} elsif ((FMGCInternal.phase == 2 or FMGCInternal.phase == 3) and altitude <= FMGCInternal.clbSpdLimAlt) {
 				# Speed is maximum of greendot / climb speed limit
 				FMGCInternal.mngKtsMach = 0;
-				nextSpdConst = fmgc.flightPlanController.getNextSpdConst(1)[0];
+				nextSpdConst = fmgc.flightPlanController.getNextClbSpdConst(1)[0];
 				FMGCInternal.mngSpdCmd = FMGCInternal.decel ? minSpeed : math.clamp(math.min(FMGCInternal.clbSpdLim, nextSpdConst), FMGCInternal.vls_min, 999);
 			} elsif ((FMGCInternal.phase == 2 or FMGCInternal.phase == 3) and altitude > (FMGCInternal.clbSpdLimAlt)) {
 				FMGCInternal.mngKtsMach = FMGCInternal.machSwitchover ? 1 : 0;
-				nextSpdConst = fmgc.flightPlanController.getNextSpdConst(1)[0];
+				nextSpdConst = fmgc.flightPlanController.getNextClbSpdConst(1)[0];
 				FMGCInternal.mngSpdCmd = FMGCInternal.machSwitchover ? math.min(mng_alt_mach, ktsToMach(nextSpdConst)) : math.min(mng_alt_spd, nextSpdConst);
 			} elsif ((FMGCInternal.phase >= 4  and FMGCInternal.phase <= 6) and altitude > (FMGCInternal.desSpdLimAlt + 1000)) {
 				if (FMGCInternal.decel) {

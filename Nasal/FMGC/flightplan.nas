@@ -1021,24 +1021,39 @@ var flightPlanController = {
 			return;
 		}
 		for (var i = me.currentToWptIndex.getValue(); i < me.flightplans[2].getPlanSize(); i += 1) {
-			if (me.flightplans[2].getWP(i).alt_cstr_type != "above" and me.flightplans[2].getWP(i).alt_cstr != nil and me.flightplans[2].getWP(i).alt_cstr != 0 and me.flightplans[2].getWP(i).wp_role == "sid") {
+			if (me.flightplans[2].getWP(i).wp_role == "star" or me.flightplans[2].getWP(i).wp_role == "approach") {
+				return [1000000000000000,0];
+			} else if (me.flightplans[2].getWP(i).alt_cstr_type != "above" and me.flightplans[2].getWP(i).alt_cstr != nil and me.flightplans[2].getWP(i).alt_cstr != 0 and (me.flightplans[2].getWP(i).wp_role == "sid" or me.flightplans[2].getWP(i).wp_role == "missed")) {
 				return [me.flightplans[2].getWP(i).alt_cstr,i];
-			}
+			} 
 		}
 		return [1000000000000000,0];
 	},
-	#Find the next speed constraint in managed climb/approach mode
-	getNextSpdConst: func(wp_type) {
+	#Find the next speed constraint in managed climb mode
+	getNextClbSpdConst: func(wp_type) {
 		for (var i = me.currentToWptIndex.getValue(); i < me.flightplans[2].getPlanSize(); i += 1) {
 			var spdCstr = me.flightplans[2].getWP(i).speed_cstr;
 			var wp_role = me.flightplans[2].getWP(i).wp_role;
-			if (spdCstr != 0 and spdCstr != nil and ((wp_role == "sid" and wp_type) or ((wp_role == "approach" or wp_role == "star") and !wp_type))) {
+			if (wp_role == "star" or me.flightplans[2].getWP(i).wp_role == "approach") {
+				return [1000000000000000000,0];
+			} if (spdCstr != 0 and spdCstr != nil and (wp_role == "sid" or wp_role == "missed") and wp_type) {
 				return [spdCstr,i];
 			}
 		}
 		return [1000000000000000000,0];
 	},
-	
+	#Find the next speed constraint in approach mode
+	getNextDecelSpdConst: func(wp_type) {
+		for (var i = me.currentToWptIndex.getValue(); i < me.flightplans[2].getPlanSize(); i += 1) {
+			var spdCstr = me.flightplans[2].getWP(i).speed_cstr;
+			var wp_role = me.flightplans[2].getWP(i).wp_role;
+			if (spdCstr != 0 and spdCstr != nil and (wp_role == "approach" or wp_role == "star") and !wp_type) {
+				return [spdCstr,i];
+			}
+		}
+		return [1000000000000000000,0];
+	},
+
 	calculateLvlOffPoint: func(deltaAltitude, isMng) {
 		me._verticalSpeedVal = fmgc.Internal.vs.getValue();
 		if (me._verticalSpeedVal != 0) {
