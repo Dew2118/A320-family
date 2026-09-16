@@ -669,7 +669,7 @@ var ITAF = {
 	#Calculate the vertical deviation during cruise descent and approach mode. It is currently simplified for geometric descent,
 	#where if vdev is negative, it will show 0.
 	calculateVdev: func() {
-		var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1);
+		var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1);
 		var nextManagedAlt = output[0];
 		var distance = output[1];
 		var isGeo = output[2];
@@ -1208,7 +1208,7 @@ var armClb = func {
 #Called when in alt cap/alt hold when DES mode is armed, it checks when the next descent constraint is lower than current to engage
 #DES mode again.
 var armDes = func {
-	if ((fmgc.flightPlanController.getDesAltConst(-1,-1,-1) == nil or (Position.indicatedAltitudeFt.getValue() - fmgc.flightPlanController.getDesAltConst(-1,-1,-1)[0] >= 300)) and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) {
+	if ((fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1) == nil or (Position.indicatedAltitudeFt.getValue() - fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1)[0] >= 300)) and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) {
 		ITAF.setVertMode(8);
 	} else if (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP") {
 		settimer(armDes, 2);

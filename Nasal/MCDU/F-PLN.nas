@@ -137,6 +137,7 @@ var fplnItem = {
 		return sprintf("%03.0f", math.round(me.trk));
 	},
 	getSpd: func() {
+		
 		if (me.index == 0 and left(me.wp.wp_name, 4) == fmgc.FMGCInternal.depApt and fmgc.FMGCInternal.v1set) {
 			return [sprintf("%3.0f", math.round(fmgc.FMGCInternal.v1)), "grn"]; # why "mag"? I think "grn"
 		} elsif (me.wp.speed_cstr != nil and me.wp.speed_cstr > 0) {

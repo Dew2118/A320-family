@@ -248,7 +248,7 @@ canvas.NDStyles["Airbus"] = {
 							grp.setColor(me.getStyle("armed_color"));
 						}
 					} elsif(name == "sd" or name == "sc" or name == "ip"){
-						if (me.model.getValue("vnav-armed") and name != "td") {
+						if (me.model.getValue("vnav-armed")) {
 							grp.setColor(me.getStyle("armed_color"));
 						} else {
 							grp.setColor(me.getStyle("default_color"));
