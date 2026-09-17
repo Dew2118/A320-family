@@ -14,9 +14,8 @@ var DEBUG_DISCONT = 0;
 var lastIdealSlope = 0;
 var lastIdealSlopeWptIndex = 0;
 var bufferCount = 0;
-var descent_coeff = 318;
-var climb_coeff = 1000;
-
+var descentCoeff = 318;
+var climbCoeff = 1000;
 # Props.getNode
 var magHDG = props.globals.getNode("/orientation/heading-magnetic-deg", 1);
 var trueHDG = props.globals.getNode("/orientation/heading-deg", 1);
@@ -795,7 +794,7 @@ var flightPlanController = {
 	},
 	#Calculate the altitude from distance using a 3 deg angle exactly
 	getAltitudeFromDistance: func(Distance) {
-		return descent_coeff*Distance;
+		return descentCoeff*Distance;
 	},
 	#Get the extrapolated altitude from the function above
 	getExtrapolatedFirstAltitude: func(distanceToCstr, distanceToCstr2, altCstr) {
@@ -822,8 +821,9 @@ var flightPlanController = {
 		if (altitude <= 10000) {
 			return 250;
 		}
+		
 		var costIndex = fmgc.FMGCNodes.costIndex.getValue();
-		var speed = 266 + 0.4217*costIndex;
+		var speed = 266 + 0.4217*math.clamp(costIndex,0,120);
 		return math.clamp(speed, 250, 345);
 	},
 
@@ -1174,7 +1174,7 @@ var flightPlanController = {
 		var distanceToCstr = info[1];
 		if (me.currentToWptIndex.getValue() > wptIndex) return;
 		if ((abs(fmgc.FMGCInternal.crzFt - Internal.alt.getValue()) <= 20 and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) or fmgc.FMGCInternal.phase == 2) {
-			var distanceToDescend = math.max((fmgc.FMGCInternal.crzFt - altCstr)/descent_coeff,0);
+			var distanceToDescend = math.max((fmgc.FMGCInternal.crzFt - altCstr)/descentCoeff,0);
 			if (distanceToCstr - distanceToDescend < 0) {
 				fmgc.Internal.decelerate.setBoolValue(1);
 			} else {
@@ -1228,20 +1228,23 @@ var flightPlanController = {
 			for (var j = 1; j < size(me.wptSpdAltList); j+=1) {
 				var distance = 0;
 				var i = j + me.currentToWptIndex.getValue() - 1;
-				print(me.wptSpdAltList[j-1][1] ~ " " ~ me.wptSpdAltList[j][1]  ~ " " ~ me.wptSpdAltList[j-1][2]  ~ " " ~ me.wptSpdAltList[j][2]);
-				if (me.wptSpdAltList[j-1][0] != me.wptSpdAltList[j][0]) {
-					if (me.flightplans[2].getWP(i).speed_cstr != 0 and me.flightplans[2].getWP(i).speed_cstr != nil) {
-						
-						distance = math.max(0, (me.wptSpdAltList[j-1][0] - me.wptSpdAltList[j][0])/10);
-						if ((distance < referenceDistance or j > 1) and final_distance > distance) {
-							final_distance = distance;
-							final_index = i;
-							found = 1;
-						}
+				# print(me.wptSpdAltList[j-1][1] ~ " " ~ me.wptSpdAltList[j][1]  ~ " " ~ me.wptSpdAltList[j-1][2]  ~ " " ~ me.wptSpdAltList[j][2]);
+				# print(me.flightplans[2].getWP(i).speed_cstr);
+				
+				if (me.flightplans[2].getWP(i).speed_cstr != 0 and me.flightplans[2].getWP(i).speed_cstr != nil) {
+					
+					distance = math.max(0, (me.wptSpdAltList[j-1][0] - me.wptSpdAltList[j][0])/10);
+					# print("condition 1 distance is " ~ distance ~ " currentspeed is " ~ me.wptSpdAltList[0][0]);
+					if ((distance < referenceDistance or j > 1) and final_distance > distance and (j != 1 or distance == 0 or (!fmgc.slowingDownOnSpdCstr))) {
+						lastCurrentSpeed = me.wptSpdAltList[0][0];
+						final_distance = distance;
+						final_index = i;
+						found = 1;
 					}
-						
+				}
+				if (me.wptSpdAltList[j-1][0] != me.wptSpdAltList[j][0]) {		
 					if (me.wptSpdAltList[j-1][1] <= 10000 and me.wptSpdAltList[j][1] > 10000 and me.wptSpdAltList[j][0] > 250) {
-						distance = me.getLegDistance(i) - (10000 - me.wptSpdAltList[j-1][1])/climb_coeff;
+						distance = me.getLegDistance(i) - (10000 - me.wptSpdAltList[j-1][1])/climbCoeff;
 
 						if ((distance < referenceDistance or j > 1) and final_distance > distance) {
 							final_distance = distance;
@@ -1249,7 +1252,7 @@ var flightPlanController = {
 							found = 1;
 							
 						}
-						print("first towards 10000 and altdiff is " ~ (10000 - me.wptSpdAltList[j-1][1]) ~ "and j is " ~ j ~ "and i is " ~ i ~ (me.getLegDistance(i) - distance));
+						# print("first towards 10000 and altdiff is " ~ (10000 - me.wptSpdAltList[j-1][1]) ~ "and j is " ~ j ~ "and i is " ~ i ~ (me.getLegDistance(i) - distance));
 
 						
 					} else if (me.wptSpdAltList[j-1][1] >= 11000 and me.wptSpdAltList[j][1] < 11000 and me.wptSpdAltList[j-1][0] > 250) {
@@ -1258,12 +1261,12 @@ var flightPlanController = {
 						if (me.wptSpdAltList[j-1][2] == 0 and me.wptSpdAltList[j][2] == 1) {
 							lastAlt = fmgc.FMGCInternal.crzFt;
 						}
-						if (me.wptSpdAltList[j][4]) {
+						if (me.wptSpdAltList[j][3]) {
 							distance = me.getLegDistance(i) - me.getLegDistance(i)/(lastAlt - me.wptSpdAltList[j][1]) * (lastAlt - 11000);
 						} else {
-							distance = descent_coeff*(lastAlt - 11000);
+							distance = (11000 - me.wptSpdAltList[j][1])/descentCoeff;
 						}
-						
+						# print("distance " ~ distance ~ " lastAlt " ~ lastAlt);
 						if ((distance < referenceDistance or j > 1) and final_distance > distance) {
 							final_distance = distance;
 							final_index = i;
@@ -1272,18 +1275,18 @@ var flightPlanController = {
 					}
 					
 					
-				} if (me.wptSpdAltList[j-1][1] < 10000 and me.wptSpdAltList[j][1] < 11000 and me.wptSpdAltList[j-1][2] == 0 and me.wptSpdAltList[j][2] == 1) {
-					print("entering the both 10k");
-					distance = (me.getLegDistance(i)  - (10000 - me.wptSpdAltList[j-1][1])/climb_coeff);
+				} if (me.wptSpdAltList[j-1][1] < 11000 and me.wptSpdAltList[j][1] < 11000 and me.wptSpdAltList[j-1][2] == 0 and me.wptSpdAltList[j][2] == 1) {
+					# print("entering the both 10k");
+					distance = (me.getLegDistance(i)  - (10000 - me.wptSpdAltList[j-1][1])/climbCoeff);
 					if (referenceDistance <= distance) {
-						print("second condition triggered first distance is " ~ distance);
-						distance = me.getLegDistance(i)  - (fmgc.FMGCInternal.crzFt - 11000)/descent_coeff;
+						# print("second condition triggered first distance is " ~ distance);
+						distance = (11000 - me.wptSpdAltList[j][1])/descentCoeff;
 					}
 					if ((distance < referenceDistance or j > 1) and final_distance > distance) {
 						final_distance = distance;
 						found = 1;
 						final_index = i;
-						print("10000 towards 10000 and altdiff is " ~ (10000 - me.wptSpdAltList[j-1][1]) ~ "leg distance is " ~ me.getLegDistance(i));
+						# print("10000 towards 10000 and altdiff is " ~ (10000 - me.wptSpdAltList[j-1][1]) ~ "leg distance is " ~ me.getLegDistance(i));
 					}
 					
 				}
@@ -1314,7 +1317,7 @@ var flightPlanController = {
 			var vs = 0;
 			if (me.interceptArrowLow) vs = -1000;
 			else vs = fmgc.Internal.vs.getValue();
-			var interceptDistance = ((currentAlt - altCstr) - (descent_coeff * distanceToCstr)) / (((60 * math.abs(vs)) / gs) - descent_coeff);
+			var interceptDistance = ((currentAlt - altCstr) - (descentCoeff * distanceToCstr)) / (((60 * math.abs(vs)) / gs) - descentCoeff);
 			var interceptPoint = me.flightplans[2].pathGeod(me.currentToWptIndex.getValue() - 1, me.flightplans[2].getWP(me.currentToWptIndex.getValue()).leg_distance - me.distToWpt.getValue() + interceptDistance);
 			if (distanceToCstr - interceptDistance <= 2 and me.interceptArrowHigh) {
 				fmgc.Internal.moreDrag.setBoolValue(1);
@@ -1371,13 +1374,18 @@ var flightPlanController = {
 				cstrIndex = info[1];
 				if (cstrIndex == 0) {
 					var distance = me.getLegDistance(i);
-					lastAltitude += climb_coeff * distance;
+					lastAltitude += climbCoeff * distance;
 					if (lastAltitude > fmgc.FMGCInternal.crzFt) {
 						descent = 1;
 						lastAltitude = fmgc.FMGCInternal.crzFt;
 					} else {
 						lastAltitude = math.min(lastAltitude, fmgc.FMGCInternal.crzFt);
-						append(newWptSpdAltList, [me.getSpeedAtAltitude(lastAltitude), lastAltitude, descent,isGeo]);
+						
+						var nextSpdConst = me.getNextClbSpdConst(i)[0];
+						if (nextSpdConst > 346) {
+							nextSpdConst = me.getSpeedAtAltitude(lastAltitude);
+						}
+						append(newWptSpdAltList, [nextSpdConst, lastAltitude, descent,isGeo]);
 						i += 1;
 						continue;
 					}
@@ -1388,7 +1396,7 @@ var flightPlanController = {
 					if (nextSpdConst > 346) {
 						nextSpdConst = me.getSpeedAtAltitude(lastAltitude);
 					}
-					lastAltitude += climb_coeff * distance;
+					lastAltitude += climbCoeff * distance;
 					lastAltitude = math.min(lastAltitude, altCstr);
 					append(newWptSpdAltList,[nextSpdConst, lastAltitude, descent,isGeo]);
 					}
@@ -1397,7 +1405,7 @@ var flightPlanController = {
 				
 			} else if (!descent) {
 				var distance = me.getLegDistance(i);
-				lastAltitude += climb_coeff * distance;
+				lastAltitude += climbCoeff * distance;
 				if (lastAltitude > fmgc.FMGCInternal.crzFt) {
 					descent = 1;
 					lastAltitude = fmgc.FMGCInternal.crzFt;
@@ -1454,14 +1462,16 @@ var flightPlanController = {
 						cumulativeDistance += me.getLegDistance(j);
 						var distanceLeft = distanceToCstr - cumulativeDistance;
 						distanceLeft = math.max(0,distanceLeft);
-						altitude = distanceLeft * descent_coeff + altCstr;
+						altitude = distanceLeft * descentCoeff + altCstr;
 						altitude = math.min(altitude, lastAltitude);
-						if (me.flightplans[2].getWP(j).speed_cstr != 0 and me.flightplans[2].getWP(j).speed_cstr != nil) {
+						# print("lastSpdconst before" ~ lastSpdConst);
+						if (me.flightplans[2].getWP(j).speed_cstr != 0 and me.flightplans[2].getWP(j).speed_cstr != nil and (me.flightplans[2].getWP(j).wp_role == "star" or me.flightplans[2].getWP(j).wp_role == "approach")) {
 							lastSpdConst = me.flightplans[2].getWP(j).speed_cstr;
 						}
 						if (altitude <= 11000 and lastSpdConst > 250) {
 							lastSpdConst = 250;
 						}
+						print("lastspdconst = " ~ lastSpdConst);
 						var speed = lastSpdConst;
 						if (speed > 346) speed =  me.getSpeedAtAltitude(lastAltitude);
 						append(newWptSpdAltList, [speed, altitude, descent, isGeo]);

@@ -89,11 +89,37 @@ var fplnItem = {
 			return ["problem", nil, "ack"];
 		}
 	},
-	updateRightText: func() {
+	updateRightText: func(wptSpdAltList, i, num) {
 		if (me.wp != nil) {
 			if (me.wp.wp_name != "DISCONTINUITY") {
-				me.spd = me.getSpd();
-				me.alt = me.getAlt();
+				if (wptSpdAltList and size(wptSpdAltList) > i and i != 0) {
+					var spd = sprintf("%3.0f",wptSpdAltList[i][0]);
+					if (me.wp.speed_cstr != nil and me.wp.speed_cstr != 0) {
+						canvas_mcdu.mySpd[num-1].show();
+					} else {
+						canvas_mcdu.mySpd[num-1].hide();
+					}
+					var alt = sprintf("%3.0f",wptSpdAltList[i][1]);
+					if (wptSpdAltList[i][1] > fmgc.FMGCInternal.transAlt) {
+						alt = "FL" ~ math.round(wptSpdAltList[i][1] / 100);
+					} else {
+						alt = alt;
+					}
+					if (me.wp.alt_cstr != nil and me.wp.alt_cstr != 0) {
+						canvas_mcdu.myAlt[num-1].show();
+					} else {
+						canvas_mcdu.myAlt[num-1].hide();
+					}
+					
+					me.spd = [sprintf("%6s",spd),"grn"];
+					me.alt = [sprintf("%6s",alt),"grn"];
+				} else {
+					canvas_mcdu.mySpd[num].hide();
+					canvas_mcdu.myAlt[num].hide();
+					me.spd = me.getSpd();
+					me.alt = me.getAlt();
+				}
+				
 				if (me.colour != "yel") {	# not temporary flightplan
 					me._colour = "wht";
 					#if (me.spd[1] != "wht" or me.alt[1] != "wht") {
@@ -496,7 +522,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 			me.L1 = me.outputList[0].updateLeftText();
 			me.C1 = me.outputList[0].updateCenterText();
 			me.C1[1] = (fmgc.flightPlanController.fromWptTime != nil) ? "UTC   " : "TIME   ";  # since TO change to UTC time (1 space left to center)
-			me.R1 = me.outputList[0].updateRightText();
+			me.R1 = me.outputList[0].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll,1);
 			me.R1[1] = "SPD/ALT    ";
 		} else {
 			me.L1 = [nil, nil, "ack"];
@@ -506,7 +532,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 2) {
 			me.L2 = me.outputList[1].updateLeftText();
 			me.C2 = me.outputList[1].updateCenterText();
-			me.R2 = me.outputList[1].updateRightText();
+			me.R2 = me.outputList[1].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+1,2);
 		} else {
 			me.L2 = [nil, nil, "ack"];
 			me.C2 = [nil, nil, "ack"];
@@ -515,7 +541,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 3) {
 			me.L3 = me.outputList[2].updateLeftText();
 			me.C3 = me.outputList[2].updateCenterText();
-			me.R3 = me.outputList[2].updateRightText();
+			me.R3 = me.outputList[2].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+2,3);
 		} else {
 			me.L3 = [nil, nil, "ack"];
 			me.C3 = [nil, nil, "ack"];
@@ -524,7 +550,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 4) {
 			me.L4 = me.outputList[3].updateLeftText();
 			me.C4 = me.outputList[3].updateCenterText();
-			me.R4 = me.outputList[3].updateRightText();
+			me.R4 = me.outputList[3].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+3,4);
 		} else {
 			me.L4 = [nil, nil, "ack"];
 			me.C4 = [nil, nil, "ack"];
@@ -533,7 +559,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 5) {
 			me.L5 = me.outputList[4].updateLeftText();
 			me.C5 = me.outputList[4].updateCenterText();
-			me.R5 = me.outputList[4].updateRightText();
+			me.R5 = me.outputList[4].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+4,5);
 		} else {
 			me.L5 = [nil, nil, "ack"];
 			me.C5 = [nil, nil, "ack"];
