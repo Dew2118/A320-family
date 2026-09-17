@@ -804,7 +804,7 @@ var flightPlanController = {
 			return 250;
 		}
 		var costIndex = fmgc.FMGCNodes.costIndex.getValue();
-		var speed = 266 + 0.4217*costIndex;
+		var speed = 266 + 0.4217*math.clamp(costIndex,0,12);
 		return math.clamp(speed, 250, 345);
 	},
 
