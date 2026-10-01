@@ -8,6 +8,7 @@ var MCDU2_display = nil;
 var myLatRev = [nil, nil];
 var mySpd = [];
 var myAlt = [];
+var isFPLNPage = 0;
 var myVertRev = [nil, nil];
 var myDeparture = [nil, nil];
 var myArrival = [nil, nil];
@@ -193,12 +194,11 @@ var canvas_MCDU_base = {
 		me["PERFGA_FE"].setColor(BLUE);
 		me["PERFGA_SE"].setColor(BLUE);
 		me["PERFGA_OE"].setColor(BLUE);
-		for (var i = 1; i <= 5; i+=1) {
-			append(mySpd, me["R"~i~"_spd"]);
-			# me["R"~i~"_spd"].hide();
-			append(myAlt, me["R"~i~"_altitude"]);
-			# me["R"~i~"_altitude"].hide();
+		for (var j = 1; j <= 5; j+=1) {
+			append(mySpd, me["R"~j~"_spd"]);
+			append(myAlt, me["R"~j~"_altitude"]);
 		}
+		isFPLNPage = 0;
 		me.page = canvas_group;
 		me.updateretard = 0; # skip a few page update to save CPU
 		
@@ -242,10 +242,14 @@ var canvas_MCDU_base = {
 		me["Simple_Center"].hide();
 		me["Simple_Title2"].hide();
 		me["FPLN"].hide();
-		for (var i = 1; i <= 5; i+=1) {
-			me["R"~i~"_spd"].hide();
-			me["R"~i~"_altitude"].hide();
+		for (var j = 1; j <= 5; j+=1) {
+			
+			me["R"~j~"_spd"].hide();
+			me["R"~j~"_altitude"].hide();
 		}
+#		myAlt = [];
+#	        mySpd = [];
+		isFPLNPage = 0;
 		me["DIRTO_TMPY_group"].hide();
 		me["INITA"].hide();
 		me["IRSINIT"].hide();
@@ -264,10 +268,14 @@ var canvas_MCDU_base = {
 		me["Simple_Center"].show();
 		me["Simple_Title2"].hide();
 		me["FPLN"].hide();
-		for (var i = 1; i <= 5; i+=1) {
-			me["R"~i~"_spd"].hide();
-			me["R"~i~"_altitude"].hide();
+		for (var j = 1; j <= 5; j+=1) {
+			
+			me["R"~j~"_spd"].hide();
+			me["R"~j~"_altitude"].hide();
 		}
+#		myAlt = [];
+#	    mySpd = [];
+		isFPLNPage = 0;
 		me["DIRTO_TMPY_group"].hide();
 		me["INITA"].hide();
 		me["IRSINIT"].hide();
@@ -515,6 +523,11 @@ var canvas_MCDU_base = {
 				me["Simple_Center"].show();
 				me["Simple_C1S"].setColor(WHITE);
 				me["FPLN"].show();
+				isFPLNPage = 1;
+				# for (var j = 1; j <= 5; j+=1) {
+				# 	append(mySpd, me["R"~j~"_spd"]);
+				# 	append(myAlt, me["R"~j~"_altitude"]);
+				# }
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -2366,10 +2379,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].hide();
 				me["FPLN"].hide();
-				for (var i = 1; i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -2971,9 +2988,10 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].hide();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1;	j <= 5; j+=1) {
+					print("hide r-spd");
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].show();
@@ -3152,10 +3170,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].show();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].show();
@@ -3359,10 +3381,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].show();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -3814,10 +3840,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].show();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -4126,10 +4156,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].show();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -4306,10 +4340,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].show();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -5689,10 +5727,14 @@ var canvas_MCDU_base = {
 				me["Simple"].show();
 				me["Simple_Center"].hide();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].show();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -5750,10 +5792,14 @@ var canvas_MCDU_base = {
 			if (!pageSwitch[i].getBoolValue()) {
 				me["Simple"].hide();
 				me["FPLN"].hide();
-				for (var i = 1;	 i <= 5; i+=1) {
-					me["R"~i~"_spd"].hide();
-					me["R"~i~"_altitude"].hide();
+				for (var j = 1; j <= 5; j+=1) {
+					
+					me["R"~j~"_spd"].hide();
+					me["R"~j~"_altitude"].hide();
 				}
+				# myAlt = [];
+				# mySpd = [];
+				isFPLNPage = 0;
 				me["DIRTO_TMPY_group"].hide();
 				me["INITA"].hide();
 				me["IRSINIT"].hide();
@@ -5768,7 +5814,11 @@ var canvas_MCDU_base = {
 				me["ArrowLeft"].hide();
 				me["ArrowRight"].hide();
 				
+				print("HERE IN THE LODGE");
+				print(i);
+				print(pageSwitch);
 				pageSwitch[i].setBoolValue(1);
+				print("CONTINUE");
 			}
 		}
 	},

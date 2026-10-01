@@ -94,10 +94,12 @@ var fplnItem = {
 			if (me.wp.wp_name != "DISCONTINUITY") {
 				if (wptSpdAltList and size(wptSpdAltList) > i and i != 0) {
 					var spd = sprintf("%3.0f",wptSpdAltList[i][0]);
-					if (me.wp.speed_cstr != nil and me.wp.speed_cstr != 0) {
-						canvas_mcdu.mySpd[num-1].show();
-					} else {
-						canvas_mcdu.mySpd[num-1].hide();
+					if (size(canvas_mcdu.mySpd) >= num - 1 and canvas_mcdu.isFPLNPage) {
+						if (me.wp.speed_cstr != nil and me.wp.speed_cstr != 0 and me.wp.wp_type != "runway") {
+							canvas_mcdu.mySpd[num-1].show();
+						} else {
+							canvas_mcdu.mySpd[num-1].hide();
+						}
 					}
 					var alt = sprintf("%3.0f",wptSpdAltList[i][1]);
 					if (wptSpdAltList[i][1] > fmgc.FMGCInternal.transAlt) {
@@ -105,16 +107,19 @@ var fplnItem = {
 					} else {
 						alt = alt;
 					}
-					if (me.wp.alt_cstr != nil and me.wp.alt_cstr != 0) {
-						canvas_mcdu.myAlt[num-1].show();
-					} else {
-						canvas_mcdu.myAlt[num-1].hide();
+					if (size(canvas_mcdu.myAlt) >= num - 1 and canvas_mcdu.isFPLNPage) {
+						if (me.wp.alt_cstr != nil and me.wp.alt_cstr != 0 and me.wp.wp_type != "runway") {
+							canvas_mcdu.myAlt[num-1].show();
+						} else {
+							canvas_mcdu.myAlt[num-1].hide();
+						}
 					}
-					
 					me.spd = [sprintf("%6s",spd),"grn"];
 					me.alt = [sprintf("%6s",alt),"grn"];
 				} else {
-					canvas_mcdu.mySpd[num].hide();
+					if (size(canvas_mcdu.mySpd) >= num - 1 and canvas_mcdu.isFPLNPage) 
+						canvas_mcdu.mySpd[num].hide();
+					if (size(canvas_mcdu.myAlt) >= num - 1 and canvas_mcdu.isFPLNPage) 
 					canvas_mcdu.myAlt[num].hide();
 					me.spd = me.getSpd();
 					me.alt = me.getAlt();
@@ -379,8 +384,37 @@ var pseudoItem = {
 			}
 		}
 	},
-	updateRightText: func() {
-		return ["---/------", me.getDist() ~ "NM    ", "wht"];
+	updateRightText: func(wptSpdAltList, i, num) {
+		if (size(canvas_mcdu.mySpd) >= num - 1 and canvas_mcdu.isFPLNPage)
+			canvas_mcdu.mySpd[num-1].hide();
+		if (size(canvas_mcdu.myAlt) >= num - 1 and canvas_mcdu.isFPLNPage)
+			canvas_mcdu.myAlt[num-1].hide();
+		if (wptSpdAltList and size(wptSpdAltList) > i and i > 1) {
+			var spd1 = wptSpdAltList[i-1][0];
+			var spd2 = wptSpdAltList[i][0];
+			var alt1 = wptSpdAltList[i-1][1];
+			var alt2 = wptSpdAltList[i][1];
+			
+			var decelIndex = getprop("/instrumentation/nd/symbols/decel/index");
+			var prevWP = fmgc.flightPlanController.flightplans[2].getWP(decelIndex - 1);
+			
+			var dist = courseAndDistance(prevWP, fmgc.flightPlanController.decelPoint)[1];
+			var distance = dist + courseAndDistance(fmgc.flightPlanController.decelPoint, fmgc.flightPlanController.flightplans[2].getWP(decelIndex))[1];
+			# print("spd1 " ~ spd1 ~ " " ~ spd2 ~ " " ~ distance ~ " " ~ dist ~ "decelIndex is " ~ decelIndex ~ "I is " ~ i);
+			# print("alt " ~ alt1 ~ " " ~ alt2 ~ " " ~ distance ~ " " ~ dist);
+			var spd = sprintf("%3.0f",spd1 - (spd1 - spd2)/distance * dist);
+			var alt = sprintf("%3.0f",alt1 - (alt1 - alt2)/distance * dist);
+
+			if (wptSpdAltList[i][1] > fmgc.FMGCInternal.transAlt) {
+				alt = "FL" ~ math.round(wptSpdAltList[i][1] / 100);
+			} else {
+				alt = alt;
+			}
+			
+			spd = sprintf("%6s",spd);
+			alt = sprintf("%6s",alt);
+			return [spd ~ "/"~ alt, me.getDist() ~ "NM    ", "grn"];
+		} return ["---/------", me.getDist() ~ "NM    ", "wht"];
 	},
 	pushButtonLeft: func() {
 		mcdu_message(me.computer, "NOT ALLOWED");
@@ -518,11 +552,19 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		for (var i = 0; i + me.scroll < size(me.planList); i += 1) {
 			append(me.outputList, me.planList[i + me.scroll] );
 		}
+		var decelIndex = getprop("/instrumentation/nd/symbols/decel/index");
+		var count = 0;
+		if (decelIndex < me.scroll) count -= 1;
+		print("first count is " ~ count);
 		if (size(me.outputList) >= 1) {
 			me.L1 = me.outputList[0].updateLeftText();
 			me.C1 = me.outputList[0].updateCenterText();
 			me.C1[1] = (fmgc.flightPlanController.fromWptTime != nil) ? "UTC   " : "TIME   ";  # since TO change to UTC time (1 space left to center)
-			me.R1 = me.outputList[0].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll,1);
+			me.R1 = me.outputList[0].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+count,1);
+			if (me.planList[me.scroll].wp != "PSEUDO" and me.planList[count + me.scroll].wp != "STATIC") {
+				count += 1;
+				print("second count is " ~ count);
+			}
 			me.R1[1] = "SPD/ALT    ";
 		} else {
 			me.L1 = [nil, nil, "ack"];
@@ -532,7 +574,11 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 2) {
 			me.L2 = me.outputList[1].updateLeftText();
 			me.C2 = me.outputList[1].updateCenterText();
-			me.R2 = me.outputList[1].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+1,2);
+			me.R2 = me.outputList[1].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+count,2);
+			if (me.planList[1 + me.scroll].wp != "PSEUDO" and me.planList[count + me.scroll].wp != "STATIC") {
+				count += 1;
+				print("third count is " ~ count);
+			}
 		} else {
 			me.L2 = [nil, nil, "ack"];
 			me.C2 = [nil, nil, "ack"];
@@ -541,7 +587,11 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 3) {
 			me.L3 = me.outputList[2].updateLeftText();
 			me.C3 = me.outputList[2].updateCenterText();
-			me.R3 = me.outputList[2].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+2,3);
+			me.R3 = me.outputList[2].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+count,3);
+			if (me.planList[2 + me.scroll].wp != "PSEUDO" and me.planList[count + me.scroll].wp != "STATIC") {
+				count += 1;
+				print("fourth count is " ~ count);
+			}
 		} else {
 			me.L3 = [nil, nil, "ack"];
 			me.C3 = [nil, nil, "ack"];
@@ -550,7 +600,11 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 4) {
 			me.L4 = me.outputList[3].updateLeftText();
 			me.C4 = me.outputList[3].updateCenterText();
-			me.R4 = me.outputList[3].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+3,4);
+			me.R4 = me.outputList[3].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+count,4);
+			if (me.planList[3 + me.scroll].wp != "PSEUDO" and me.planList[count + me.scroll].wp != "STATIC") {
+				count += 1;
+				print("five count is " ~ count);
+			}
 		} else {
 			me.L4 = [nil, nil, "ack"];
 			me.C4 = [nil, nil, "ack"];
@@ -559,7 +613,7 @@ var fplnPage = { # this one is only created once, and then updated - remember th
 		if (size(me.outputList) >= 5) {
 			me.L5 = me.outputList[4].updateLeftText();
 			me.C5 = me.outputList[4].updateCenterText();
-			me.R5 = me.outputList[4].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+4,5);
+			me.R5 = me.outputList[4].updateRightText(fmgc.flightPlanController.wptSpdAltList,me.scroll+count,5);
 		} else {
 			me.L5 = [nil, nil, "ack"];
 			me.C5 = [nil, nil, "ack"];

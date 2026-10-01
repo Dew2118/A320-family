@@ -715,6 +715,10 @@ var ITAF = {
 				Input.idleDescent.setBoolValue(0);
 				vs = -1000;
 				fmgc.flightPlanController.interceptArrowLow = 1;
+				if (currentSpeed  - lastConstraintSpeed >= 7) {
+					vs = math.max(vs, Internal.targetFpmFlch.getValue());
+					vs = math.max(-50, vs);
+				}
 			} else {
 				fmgc.flightPlanController.interceptArrowLow = 0;
 				Input.idleDescent.setBoolValue(1);
