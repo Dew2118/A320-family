@@ -674,18 +674,39 @@ var ITAF = {
 		var distance = output[1];
 		var isGeo = output[2];
 		var wptIndex = output[4];
+		var Inhg = 0;
+		if (pts.Instrumentation.Altimeter.std.getBoolValue()) {
+			# print("is standard");
+			Inhg = 29.92;
+		} else {
+			# print("isn't standard");
+			Inhg = pts.Instrumentation.Altimeter.settingInhg.getValue();
+		}
+		var destQNH = getprop("/FMGC/internal/dest-qnh");
+		var altitudeAdjustment = 0;
+		if (destQNH > 900 and destQNH < 1100) {
+			altitudeAdjustment = 27*(destQNH - Inhg * 33.8639);
+		} else if (destQNH > 29 and destQNH < 31) {
+			altitudeAdjustment = 27*(destQNH * 33.8639 - Inhg * 33.8639);
+		}
+		# print("current Inhg is " ~ Inhg ~ "destQNH is " ~ destQNH ~ "alt adjustment is " ~ altitudeAdjustment);
 		if (isGeo) {
-			var idealSlope = fmgc.flightPlanController.getIdealSlope(nextManagedAlt,distance,wptIndex);
+			if (distance < 0) {
+				distance = 0;
+			}
 			var deltaAlt = Position.indicatedAltitudeFt.getValue() - nextManagedAlt;
-			var properDeltaAlt = distance * idealSlope;
+			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance) + altitudeAdjustment;
 			var difference = deltaAlt - properDeltaAlt;
+			if (difference < 0) {
+				difference = 0;
+			}
 			return difference;
 		} else {
 			if (distance < 0) {
 				distance = 0;
 			}
 			var deltaAlt = Position.indicatedAltitudeFt.getValue() - nextManagedAlt;
-			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance);
+			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance) + altitudeAdjustment;
 			var difference = deltaAlt - properDeltaAlt;
 			return difference;
 		}
