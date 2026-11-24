@@ -669,7 +669,7 @@ var ITAF = {
 	#Calculate the vertical deviation during cruise descent and approach mode. It is currently simplified for geometric descent,
 	#where if vdev is negative, it will show 0.
 	calculateVdev: func() {
-		var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1);
+		var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1, 0);
 		var nextManagedAlt = output[0];
 		var distance = output[1];
 		var isGeo = output[2];
@@ -684,19 +684,22 @@ var ITAF = {
 		}
 		var destQNH = getprop("/FMGC/internal/dest-qnh");
 		var altitudeAdjustment = 0;
-		if (destQNH > 900 and destQNH < 1100) {
+		if (nextManagedAlt < fmgc.FMGCInternal.transAlt) {
+			if (destQNH > 900 and destQNH < 1100) {
 			altitudeAdjustment = 27*(destQNH - Inhg * 33.8639);
-		} else if (destQNH > 29 and destQNH < 31) {
-			altitudeAdjustment = 27*(destQNH * 33.8639 - Inhg * 33.8639);
+			} else if (destQNH > 29 and destQNH < 31) {
+				altitudeAdjustment = 27*(destQNH * 33.8639 - Inhg * 33.8639);
+			}
 		}
+		
 		# print("current Inhg is " ~ Inhg ~ "destQNH is " ~ destQNH ~ "alt adjustment is " ~ altitudeAdjustment);
 		if (isGeo) {
 			if (distance < 0) {
 				distance = 0;
 			}
 			var deltaAlt = Position.indicatedAltitudeFt.getValue() - nextManagedAlt;
-			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance) + altitudeAdjustment;
-			var difference = deltaAlt - properDeltaAlt;
+			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance);
+			var difference = deltaAlt + altitudeAdjustment - properDeltaAlt;
 			if (difference < 0) {
 				difference = 0;
 			}
@@ -707,7 +710,7 @@ var ITAF = {
 			}
 			var deltaAlt = Position.indicatedAltitudeFt.getValue() - nextManagedAlt;
 			var properDeltaAlt =  fmgc.flightPlanController.getAltitudeFromDistance(distance) + altitudeAdjustment;
-			var difference = deltaAlt - properDeltaAlt;
+			var difference = deltaAlt + altitudeAdjustment - properDeltaAlt;
 			return difference;
 		}
 
@@ -1171,7 +1174,7 @@ var ITAF = {
 #It compares the managed show altitude and the selected altitude and display whatever is higher in the correct color and
 #get the VS then set the VS to descend either idly or geometrically towards the next altitude constraint.
 var managedDes = func {
-	var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1);
+	var output = fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1, 1);
 	var realNextManagedAlt = output[0];
 	var showNextManagedAlt = fmgc.flightPlanController.calculateManagedLvlOffAltitude();
 	var distance = output[1];
@@ -1233,7 +1236,7 @@ var armClb = func {
 #Called when in alt cap/alt hold when DES mode is armed, it checks when the next descent constraint is lower than current to engage
 #DES mode again.
 var armDes = func {
-	if ((fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1) == nil or (Position.indicatedAltitudeFt.getValue() - fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1)[0] >= 300)) and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) {
+	if ((fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1, 1) == nil or (Position.indicatedAltitudeFt.getValue() - fmgc.flightPlanController.getDesAltConst(-1,-1,-1,-1, 1)[0] >= 300)) and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) {
 		ITAF.setVertMode(8);
 	} else if (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP") {
 		settimer(armDes, 2);

@@ -258,9 +258,10 @@ canvas.NDStyles["Airbus"] = {
 					}
 				},
 				init_after_callback: func{
-				}
-			},
-			"z-index": 5,
+					var name = me.model.getName();
+				},
+				"z-index": 5,
+			}
 		},
 		{ 
 			name:"APT", 

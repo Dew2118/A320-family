@@ -1073,7 +1073,7 @@ var ManagedSPD = maketimer(0.25, func {
 				fmgc.flightPlanController.interceptArrowHigh = 1;
 			} else {
 				fmgc.flightPlanController.interceptArrowHigh = 0;
-			}
+			} 
 			if ((constraintSpeed != 0 and constraintSpeed != nil and distanceToWpt - math.max((currentSpeed - constraintSpeed)/10,0) <= 1 and distanceToWpt >= 1 and distanceToWpt <= 1000) or FMGCInternal.decel or lastConstraintSpeed <= 346) {
 				adjustment = math.clamp(adjustment, -20, 5);
 				Internal.econMarginReduced.setBoolValue(1);
