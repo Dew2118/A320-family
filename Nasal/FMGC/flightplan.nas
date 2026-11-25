@@ -13,7 +13,7 @@ var storeCourse = nil;
 var DEBUG_DISCONT = 0;
 var bufferCount = 0;
 var descentCoeff = 318;
-var climbCoeff = 1000;
+var climbCoeff = 850;
 var magHDG = props.globals.getNode("/orientation/heading-magnetic-deg", 1);
 var trueHDG = props.globals.getNode("/orientation/heading-deg", 1);
 
@@ -1237,63 +1237,6 @@ var flightPlanController = {
 	#	 index: index to insert at in plan
 	#	 plan: plan to insert to
 	
-	calculateDesPoint: func() {
-		if (me.currentToWptIndex.getValue() < 0) {
-			return;
-		}
-		var isArmed = (vertText == "ALT HLD" or vertText == "ALT CAP") and Internal.altManaged.getBoolValue() == 1;
-		var info = me.getDesAltConst(-1,-1,-1,-1);
-		var wptIndex = info[4];
-		var altCstr = info[0];
-		var distanceToCstr = info[1];
-		if (me.currentToWptIndex.getValue() > wptIndex) return;
-		if ((abs(fmgc.FMGCInternal.crzFt - Internal.alt.getValue()) <= 20 and (Text.vert.getValue() == "ALT HLD" or Text.vert.getValue() == "ALT CAP")) or fmgc.FMGCInternal.phase == 2) {
-			var distanceToDescend = math.max((fmgc.FMGCInternal.crzFt - altCstr)/descentCoeff,0);
-			if (distanceToCstr - distanceToDescend < 0) {
-				fmgc.Internal.decelerate.setBoolValue(1);
-			} else {
-				fmgc.Internal.decelerate.setBoolValue(0);
-			}
-			var TODPoint = me.flightplans[2].pathGeod(me.currentToWptIndex.getValue() - 1, me.flightplans[2].getWP(me.currentToWptIndex.getValue()).leg_distance - me.distToWpt.getValue() + (distanceToCstr - distanceToDescend));
-			if (isArmed) {
-				setprop("/autopilot/route-manager/vnav/sd/vnav-armed", 1);
-			} else {
-				setprop("/autopilot/route-manager/vnav/sd/vnav-armed", 0);
-			}
-			setprop("/autopilot/route-manager/vnav/sd/latitude-deg", TODPoint.lat); 
-			setprop("/autopilot/route-manager/vnav/sd/longitude-deg",TODPoint.lon);
-			setprop("/autopilot/route-manager/vnav/sd/show", 1);
-		} else {
-			fmgc.Internal.decelerate.setBoolValue(0);
-			var endingWptIndex = info[4];
-			for (var i = wptIndex; i < me.flightplans[2].getPlanSize(); i+= 1) {
-				var wp = me.flightplans[2].getWP(i);
-				if (wp.alt_cstr != 0 and wp.alt_cstr != nil) {
-					if (wp.alt_cstr == altCstr) {
-						if (wp.alt_cstr_type == "at" or wp.alt_cstr_type == "between") {
-							endingWptIndex = i;
-						}
-					} else if (wp.alt_cstr_type == "at") break;
-					else if (wp.wp_role != "star" and wp.wp_role != "approach") break;
-				} else if (wp.wp_type == "runway") break;
-			}
-			if (me.flightplans[2].getWP(endingWptIndex).wp_type == "runway") {
-				setprop("/autopilot/route-manager/vnav/sd/show", 0);
-			} else {
-				var desPoint = me.flightplans[2].pathGeod(endingWptIndex,0);
-				if (isArmed) {
-					setprop("/autopilot/route-manager/vnav/sd/vnav-armed", 1);
-				} else {
-					setprop("/autopilot/route-manager/vnav/sd/vnav-armed", 0);
-				}
-				setprop("/autopilot/route-manager/vnav/sd/latitude-deg", desPoint.lat); 
-				setprop("/autopilot/route-manager/vnav/sd/longitude-deg",desPoint.lon);
-				setprop("/autopilot/route-manager/vnav/sd/show", 1);
-			}
-			
-		}
-		
-	},
 
 	calculateSpdChngPoint: func() {
 		if (me.currentToWptIndex.getValue() < 0) {
@@ -1385,38 +1328,6 @@ var flightPlanController = {
 
 	},
 	
-	calculateInterceptPoint: func(isMng) {
-		if (me.currentToWptIndex.getValue() < 0) {
-			return;
-		}
-		if (me.interceptArrowHigh or me.interceptArrowLow) {
-			var info = me.getDesAltConst(-1,-1,-1,-1);
-			var altCstr = info[0];
-			var distanceToCstr = info[1];
-			var currentAlt = Position.indicatedAltitudeFt.getValue();
-			var vs = 0;
-			if (me.interceptArrowLow) vs = -1000;
-			else vs = fmgc.Internal.vs.getValue();
-			var interceptDistance = ((currentAlt - altCstr) - (descentCoeff * distanceToCstr)) / (((60 * math.abs(vs)) / gs) - descentCoeff);
-			var interceptPoint = me.flightplans[2].pathGeod(me.currentToWptIndex.getValue() - 1, me.flightplans[2].getWP(me.currentToWptIndex.getValue()).leg_distance - me.distToWpt.getValue() + interceptDistance);
-			if (distanceToCstr - interceptDistance <= 2 and me.interceptArrowHigh) {
-				fmgc.Internal.moreDrag.setBoolValue(1);
-			} else {
-				fmgc.Internal.moreDrag.setBoolValue(0);
-			}
-			if (isMng) {
-				setprop("/autopilot/route-manager/vnav/ip/vnav-armed", 1);
-			} else {
-				setprop("/autopilot/route-manager/vnav/ip/vnav-armed", 0);
-			}
-			setprop("/autopilot/route-manager/vnav/ip/latitude-deg", interceptPoint.lat); 
-			setprop("/autopilot/route-manager/vnav/ip/longitude-deg",interceptPoint.lon);
-			setprop("/autopilot/route-manager/vnav/ip/show", 1);
-		} else {
-			setprop("/autopilot/route-manager/vnav/ip/show", 0);
-			fmgc.Internal.moreDrag.setBoolValue(0);
-		}
-	},
 
 	getWptSpdAltList: func() {
 		if (me.currentToWptIndex.getValue() <= 0) {
@@ -1449,10 +1360,9 @@ var flightPlanController = {
 			print("i = " ~ i ~ "name " ~ wp.wp_name);
 			if (wp.wp_type == "runway") {
 				append(newWptSpdAltList,[FMGCInternal.approachSpeed,me.flightplans[2].destination.elevation*M2FT,descent,isGeo]);
-				break
+				break;
 			}
 			if (wp.wp_role == "sid" or wp.wp_role == "missed") {
-				print("call sid missed");
 				var info = me.getClbAltConst(i);
 				altCstr = info[0];
 				cstrIndex = info[1];
@@ -1475,14 +1385,19 @@ var flightPlanController = {
 					}
 				} else {
 					for (var j = i; j <= cstrIndex; j+=1) {
-					var distance = me.flightplans[2].getWP(j).leg_distance;
-					var nextSpdConst = me.getNextClbSpdConst(j)[0];
-					if (nextSpdConst > 346) {
-						nextSpdConst = me.getSpeedAtAltitude(lastAltitude);
-					}
-					lastAltitude += climbCoeff * distance;
-					lastAltitude = math.min(lastAltitude, altCstr);
-					append(newWptSpdAltList,[nextSpdConst, lastAltitude, descent,isGeo]);
+						var distance = me.getLegDistance(j);
+						var nextSpdConst = me.getNextClbSpdConst(j)[0];
+						if (nextSpdConst > 346) {
+							nextSpdConst = me.getSpeedAtAltitude(lastAltitude);
+						}
+						lastAltitude += climbCoeff * distance;
+						lastAltitude = math.min(lastAltitude, altCstr);
+						if (lastAltitude > fmgc.FMGCInternal.crzFt) {
+							descent = 1;
+							lastAltitude = fmgc.FMGCInternal.crzFt;
+							break;
+						}
+						append(newWptSpdAltList,[nextSpdConst, lastAltitude, descent,isGeo]);
 					}
 					i = cstrIndex + 1;
 				}
@@ -1502,7 +1417,7 @@ var flightPlanController = {
 			}
 			if (descent) {
 				# print("call approach star");
-				var info = me.getDesAltConst(i,isGeo,newWptSpdAltList[size(newWptSpdAltList) - 1][0],lastAltitude);
+				var info = me.getDesAltConst(i,isGeo,newWptSpdAltList[size(newWptSpdAltList) - 1][0],lastAltitude, 0);
 				altCstr = info[0];
 				var distanceToCstr = info[1];
 				cstrIndex = info[4];
@@ -1534,8 +1449,8 @@ var flightPlanController = {
 							lastSpdConst = 250;
 						}
 						var speed = 0;
-						if (i >= decelIndex) {
-							speed = me.getNextDecelSpdConst(i)[0];
+						if (j >= decelIndex) {
+							speed = me.getNextDecelSpdConst(j)[0];
 							if (speed > 346) speed = fmgc.FMGCNodes.clean.getValue();
 						} else {
 							speed = lastSpdConst;
@@ -1551,21 +1466,25 @@ var flightPlanController = {
 					var altitude = 0;
 					for (var j = i; j <= cstrIndex; j+=1) {
 						cumulativeDistance += me.getLegDistance(j);
+						
+						# print("lastSpdconst before" ~ lastSpdConst);
+						if (me.flightplans[2].getWP(j).speed_cstr != 0 and me.flightplans[2].getWP(j).speed_cstr != nil and (me.flightplans[2].getWP(j).wp_role == "star" or me.flightplans[2].getWP(j).wp_role == "approach")) {
+							cumulativeDistance -= (lastSpdConst - me.flightplans[2].getWP(j).speed_cstr)/10;
+							lastSpdConst = me.flightplans[2].getWP(j).speed_cstr;
+						}
 						var distanceLeft = distanceToCstr - cumulativeDistance;
 						distanceLeft = math.max(0,distanceLeft);
 						altitude = distanceLeft * descentCoeff + altCstr;
 						altitude = math.min(altitude, lastAltitude);
-						# print("lastSpdconst before" ~ lastSpdConst);
-						if (me.flightplans[2].getWP(j).speed_cstr != 0 and me.flightplans[2].getWP(j).speed_cstr != nil and (me.flightplans[2].getWP(j).wp_role == "star" or me.flightplans[2].getWP(j).wp_role == "approach")) {
-							lastSpdConst = me.flightplans[2].getWP(j).speed_cstr;
-						}
 						if (altitude <= 11000 and lastSpdConst > 250) {
 							lastSpdConst = 250;
 						}
+						
+						
 						# print("lastspdconst = " ~ lastSpdConst);
 						var speed = 0;
-						if (i >= decelIndex) {
-							speed = me.getNextDecelSpdConst(i)[0];
+						if (j >= decelIndex) {
+							speed = me.getNextDecelSpdConst(j)[0];
 							if (speed > 346) speed = fmgc.FMGCNodes.clean.getValue();
 						} else {
 							speed = lastSpdConst;

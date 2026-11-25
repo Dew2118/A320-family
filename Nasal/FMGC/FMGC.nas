@@ -1061,7 +1061,7 @@ var ManagedSPD = maketimer(0.25, func {
 			} elsif (!ktsmach and FMGCInternal.mngKtsMach) {
 				Input.ktsMach.setValue(1);
 			}
-			if (Output.vert.getValue() == 8) {
+			if (Output.vert.getValue() == 8 and FMGCInternal.phase >= 4 and FMGCInternal.phase <= 5) {
 				adjustment = fmgc.ITAF.calculateVdev()/50;
 			} else {
 				adjustment = 0;
@@ -1069,7 +1069,7 @@ var ManagedSPD = maketimer(0.25, func {
 			
 			#This is to set ECON range during descent to be equal to vdev/50.
 			adjustment = math.clamp(adjustment, -20, 20);
-			if (adjustment == 20) {
+			if (adjustment > 0) {
 				fmgc.flightPlanController.interceptArrowHigh = 1;
 			} else {
 				fmgc.flightPlanController.interceptArrowHigh = 0;
